@@ -2,12 +2,13 @@ using AngularSPAWebAPI.Models;
 using AngularSPAWebAPI.Models.AccountViewModels;
 using AngularSPAWebAPI.Services;
 using CBAS.Helpers;
-using IdentityModel;
-using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using OpenIddict.Abstractions;
+using OpenIddict.Validation.AspNetCore;
+using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace AngularSPAWebAPI.Controllers
     /// </summary>
     [Route("api/[controller]")]
     // Authorization policy for this API.
-    [Authorize(AuthenticationSchemes = IdentityServerAuthenticationDefaults.AuthenticationScheme, Policy = "Manage Accounts")]
+    [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
     public class IdentityController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
@@ -86,6 +87,7 @@ namespace AngularSPAWebAPI.Controllers
                 TwoFactorEnabled = false,
                 UserName = model.username,
                 TermsConfirmed = model.termsConfirmed,
+                Id = Guid.NewGuid().ToString(),
             };
 
             var result = await _userManager.CreateAsync(user, model.password);
@@ -167,8 +169,8 @@ namespace AngularSPAWebAPI.Controllers
         {
             var user = await _userManager.FindByNameAsync(userName);
             var claims = new List<Claim> {
-                new Claim(type: JwtClaimTypes.GivenName, value: user.GivenName),
-                new Claim(type: JwtClaimTypes.FamilyName, value: user.FamilyName),
+                new Claim(OpenIddictConstants.Claims.GivenName, user.GivenName ?? ""),
+                new Claim(OpenIddictConstants.Claims.FamilyName, user.FamilyName ?? "")
             };
             await _userManager.AddClaimsAsync(user, claims);
         }
