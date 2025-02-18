@@ -76,26 +76,24 @@ import { User } from '../models/user';
   }
 
     public init(): void {
+        this.oAuthService.setStorage(localStorage);
         this.oAuthService.configure(oAuthDevelopmentConfig);
-        this.oAuthService.loadDiscoveryDocument().then(() => {
-            this.oAuthService.tryLoginCodeFlow().then(() => {
-                console.log("✅ User authenticated with valid access token.");
-                this.signinStatus.next(true);
-                this.user.next(this.getUser());
-            });
-        });
-
+        this.oAuthService.loadDiscoveryDocument()
+            .then(() => this.oAuthService.tryLoginCodeFlow())
+            .then(() => {
+                if (this.oAuthService.hasValidAccessToken()) {
+                    this.oAuthService.setupAutomaticSilentRefresh();
+                    console.log("✅ User authenticated with valid access token.");
+                    this.signinStatus.next(true);
+                    this.user.next(this.getUser());
+                }
+            })
+            .catch(err => console.error("Error during login flow", err));
         this.oAuthService.events.subscribe(e => {
             console.log('OAuth Event:', e);
             if (e.type === 'token_received') {
                 console.log("Access Token:", this.oAuthService.getAccessToken());
-            }
-        });
-
-        this.oAuthService.events.subscribe(e => {
-            console.log('Oauth Event:', e);
-            if (e.type === 'token_received') {
-                console.log("Access Token:", this.oAuthService.getAccessToken());
+                // Optionally, setup silent refresh here too if not already done.
             }
         });
     // Tells all the subscribers about the new status & data.
