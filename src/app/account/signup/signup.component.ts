@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 // import { FormControl } from '@angular/forms';
 // import { FormControl, Validators, ReactiveFormsModule, FormGroup, FormBuilder } from '@angular/forms';
@@ -33,7 +33,8 @@ export class SignupComponent extends Signin {
     private identityService: IdentityService,
     private piSiteService: PISiteService,
     public dialogTerms: MatDialog,
-    protected manageuserService: ManageUserService) {
+      protected manageuserService: ManageUserService,
+      private cdr: ChangeDetectorRef) {
     super(router, oAuthService, authenticationService, manageuserService);
   }
 
@@ -41,7 +42,7 @@ export class SignupComponent extends Signin {
   getPISiteList() {
 
     this.piSiteService.getPISite().subscribe((data) => {
-      this.piSiteList = data.piSite;
+      this.piSiteList = data;
       // console.log(this.piSiteList);
     });
 
@@ -63,7 +64,7 @@ export class SignupComponent extends Signin {
   signup(): void {
 
     // Check to see if terms and condtion was approved by user
-    if (!this.model.termsChecked) {
+    if (!this.model.termsConfirmed) {
       this.errorMessages.push({ description: 'Please read the terms and conditions and approve it by checking the checkbox' });
     } else {
 
@@ -89,7 +90,13 @@ export class SignupComponent extends Signin {
     }
 
 
-  }
+    }
+
+    signin(): void {
+        // Initiate the Authorization Code Flow with PKCE.
+        this.authenticationService.signin(this.model.username, this.model.password);
+        this.cdr.detectChanges();
+    }
 
   ngOnInit() {
     this.getPISiteList();

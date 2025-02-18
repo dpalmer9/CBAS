@@ -56,7 +56,8 @@ const routes: Routes = [
   { path: 'comp-search', loadChildren: () => import('./cogbytesSearch/cogbytesSearch.module').then(m => m.CogbytesSearchModule) },
   { path: 'pubScreen-queue', loadChildren: () => import('./pubScreenQueue/pubScreenQueue.module').then(m => m.PubScreenQueueModule) },
   { path: 'pubScreen-edit', loadChildren: () => import('./pubScreenEdit/pubScreenEdit.module').then(m => m.PubScreenEditModule) },
-  { path: 'comp-edit', loadChildren: () => import('./cogbytesEdit/cogbytesEdit.module').then(m => m.CogbytesEditModule) },
+    { path: 'comp-edit', loadChildren: () => import('./cogbytesEdit/cogbytesEdit.module').then(m => m.CogbytesEditModule) },
+    { path: 'callback', loadChildren: () => import('./callback/callback.component').then(m => m.CallbackComponent) },
 
 ];
 
