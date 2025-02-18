@@ -8,7 +8,6 @@ using Serilog;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using AngularSPAWebAPI.Models;
-using IdentityServer4.Extensions;
 
 
 namespace AngularSPAWebAPI.Services
@@ -901,8 +900,6 @@ namespace AngularSPAWebAPI.Services
 
         public static async Task<DataTable> GetDataTableAsync(string cmdTxt, List<SqlParameter> cmdParams = null)
         {
-            var cmdtest = cmdParams.IsNullOrEmpty();
-            var cmdtest2 = cmdParams?.ToArray();
             DataSet ds = await ExecDSAsync(CommandType.Text, _cnnString, cmdTxt, cmdParams?.ToArray());
             if (ds != null && ds.Tables.Count > 0)
             {
