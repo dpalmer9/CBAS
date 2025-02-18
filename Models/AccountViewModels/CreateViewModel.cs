@@ -7,7 +7,7 @@ namespace AngularSPAWebAPI.Models.AccountViewModels
     /// </summary>
     public class CreateViewModel
     {
-        public bool termsConfirmed;
+        public bool termsConfirmed { get; set; }
 
         public string username { get; set; }
         public string password { get; set; }
