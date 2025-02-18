@@ -6,7 +6,7 @@ import { environment } from '../environments/environment';
 export const oAuthDevelopmentConfig: AuthConfig = {
 
   clientId: 'AngularCBAS',
-    scope: 'openid profile email roles api',
+    scope: 'openid profile email roles api offline_access',
   issuer: 'http://localhost:5000/',
   requireHttps: false,
   redirectUri: window.location.origin + '/home',
