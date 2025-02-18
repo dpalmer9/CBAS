@@ -1,22 +1,32 @@
 using System;
+using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 using AngularSPAWebAPI.Data;
 using AngularSPAWebAPI.Models;
 using AngularSPAWebAPI.Services;
 using CBAS.Extensions;
-using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Nest;
+using OpenIddict.Abstractions;
+using OpenIddict.Core;
+using OpenIddict.EntityFrameworkCore;
+using OpenIddict.Server;
 using Serilog;
 using Serilog.Exceptions;
+using static Microsoft.IO.RecyclableMemoryStreamManager;
+using OpenIddict.Validation.AspNetCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace AngularSPAWebAPI
 {
@@ -38,26 +48,25 @@ namespace AngularSPAWebAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // By setting EnableEndpointRouting to false, you can continue using the traditional MVC routing setup
             services.AddMvc(options => options.EnableEndpointRouting = false);
-            //// SQLite & Identity.
-            //services.AddDbContext<ApplicationDbContext>(options =>
-            //    options.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
+
+            services.AddSession();
 
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(Environment.GetEnvironmentVariable("DEF_CONN")));
-
-            //services.AddDbContext<ApplicationDbContext>(options =>
-            //    options.UseSqlServer(Configuration.GetConnectionString("PubScreenConnection")));
+            {
+                options.UseSqlServer(Environment.GetEnvironmentVariable("DEF_CONN"));
+                options.UseOpenIddict();
+            }
+                );
 
             services.AddIdentity<ApplicationUser, IdentityRole>(config =>
             {
                 config.SignIn.RequireConfirmedEmail = true;
-            })
-                .AddEntityFrameworkStores<ApplicationDbContext>()
-                .AddDefaultTokenProviders();
+            }
+        )
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
 
-            // Identity options.
             services.Configure<IdentityOptions>(options =>
             {
                 // Password settings.
@@ -72,13 +81,23 @@ namespace AngularSPAWebAPI
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromHours(1);
             });
 
-            // Role based Authorization: policy based role checks.
             services.AddAuthorization(options =>
             {
-                // Policy for dashboard: only administrator role.
-                options.AddPolicy("Manage Accounts", policy => policy.RequireRole("administrator"));
-                // Policy for resources: user or administrator roles. 
-                options.AddPolicy("Access Resources", policy => policy.RequireRole("administrator", "user"));
+            });
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
+                options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
+            });
+
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.Cookie.Name = "MouseBytesAuth";
+                options.Cookie.SameSite = SameSiteMode.None;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.ExpireTimeSpan = TimeSpan.FromDays(30);
+                options.SlidingExpiration = true;
             });
 
             // Adds application services.
@@ -92,94 +111,111 @@ namespace AngularSPAWebAPI
             // Uncomment this line for publuishing
             //services.AddIdentityServer(options =>
             //         options.PublicOrigin = "https://mousebytes.ca")
-            services.AddIdentityServer()
-                // The AddDeveloperSigningCredential extension creates temporary key material for signing tokens.
-                // This might be useful to get started, but needs to be replaced by some persistent key material for production scenarios.
-                // See http://docs.identityserver.io/en/release/topics/crypto.html#refcrypto for more information.
-                .AddDeveloperSigningCredential()
-                .AddInMemoryPersistedGrants()
-                // To configure IdentityServer to use EntityFramework (EF) as the storage mechanism for configuration data (rather than using the in-memory implementations),
-                // see https://identityserver4.readthedocs.io/en/release/quickstarts/8_entity_framework.html
-                .AddInMemoryIdentityResources(Config.GetIdentityResources())
-                .AddInMemoryApiResources(Config.GetApiResources())
-                .AddInMemoryClients(Config.GetClients())
-                .AddAspNetIdentity<ApplicationUser>(); // IdentityServer4.AspNetIdentity.
 
-            if (currentEnvironment.IsProduction())
+    services.AddOpenIddict()
+
+    // Core services (database stores, etc.)
+    .AddCore(options =>
+    {
+        // Configure OpenIddict to use the EF Core stores/models
+        options.UseEntityFrameworkCore()
+               .UseDbContext<ApplicationDbContext>(); // Replace with your actual DbContext
+    })
+    // Server features
+    .AddServer(options =>
+    {
+        options.SetIssuer(new Uri("http://localhost:5000/"));
+        // Enable the endpoints you need
+        options.SetAuthorizationEndpointUris("/connect/authorize")
+               .SetTokenEndpointUris("/connect/token")
+               .SetUserInfoEndpointUris("/connect/userinfo")
+               .SetConfigurationEndpointUris("/.well-known/openid-configuration")
+               .SetIntrospectionEndpointUris("/connect/introspect");
+        // Register the signing and encryption credentials
+        // For dev/test, you can use .AddDevelopmentSigningCertificate()
+        // or .AddEphemeralEncryptionKey(), but for production you should use a real certificate.
+        options.AllowAuthorizationCodeFlow()
+                   .RequireProofKeyForCodeExchange();
+        options.AcceptAnonymousClients();
+
+
+        options.DisableAccessTokenEncryption();
+
+        options.RegisterScopes("openid", "profile", "email", "roles", "api");
+
+        options.AddDevelopmentEncryptionCertificate()
+               .AddDevelopmentSigningCertificate();
+
+        // Register ASP.NET Core host and HTTP features
+        options.UseAspNetCore()
+                   .EnableTokenEndpointPassthrough()
+                   .EnableUserInfoEndpointPassthrough()
+                   .DisableTransportSecurityRequirement()
+                   .EnableAuthorizationEndpointPassthrough();
+
+        // If you want a custom consent page, you can override default or use built-in.
+        // ...
+    })
+    // Validation features
+    .AddValidation(options =>
+    {
+        // Import the configuration from the server
+        options.UseLocalServer();
+        options.UseAspNetCore();
+    });
+
+            services.Configure<OpenIddictServerOptions>(options =>
             {
-                services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
-                    .AddIdentityServerAuthentication(options =>
-                    {
-                        options.Authority = "http://localhost:5000/";
-                        options.RequireHttpsMetadata = false;
+                options.Issuer = new Uri("http://localhost:5000/");
+            });
 
-                        options.ApiName = "WebAPI";
-                    });
-            }
-            else
-            {
-                services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
-                .AddIdentityServerAuthentication(options =>
-                {
-                    options.Authority = "http://localhost:5000/";
-                    options.RequireHttpsMetadata = false;
-
-                    options.ApiName = "WebAPI";
-                });
-            }
-
+            services.AddControllersWithViews();
 
             services.AddCors(options =>
             {
-                options.AddPolicy("LocalCorsPolicy", builder =>
+                options.AddPolicy("AllowAngularClient", policy =>
                 {
-                    builder.WithOrigins("http://localhost:4200")
-                           .AllowAnyMethod()
-                           .AllowAnyHeader()
-                           .AllowCredentials();
-                });
-
-                options.AddPolicy("ProductionCorsPolicy", builder =>
-                {
-                    builder.WithOrigins("https://mousebytes.ca") // Production origins
-                           .AllowAnyMethod()
-                           .AllowAnyHeader()
-                           .AllowCredentials();
+                    policy.WithOrigins("http://localhost:4200") // Allow requests from Angular app
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .AllowCredentials();
                 });
             });
 
-            services.Configure<FormOptions>(x => x.ValueCountLimit = 2048);
-
-            services.AddMvc();
-
-            services.Configure<FormOptions>(x =>
-            {
-                x.ValueLengthLimit = int.MaxValue;
-                x.MultipartBodyLengthLimit = long.MaxValue; // In case of multipart
-            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+
+
             app.UseSerilogRequestLogging(); // To enable Serilog request logging
+            app.UseCors("AllowAngularClient");
             if (env.IsDevelopment())
             {
-                app.UseCors("LocalCorsPolicy");
+                //app.UseCors("LocalCorsPolicy");
                 app.UseDeveloperExceptionPage();
                 // Starts "npm start" command using Shell extension.
                 app.Shell("ng serve");
             }
             else
             {
-                app.UseCors("ProductionCorsPolicy");
+                //app.UseCors("ProductionCorsPolicy");
                 app.UseExceptionHandler("/Home/Error");
                 app.UseHsts();
             }
-           
 
+
+            app.UseSession();
             app.UseHttpsRedirection();
             app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+
+            });
 
 
             // Router on the server must match the router on the client (see app.routing.module.ts) to use PathLocationStrategy.
@@ -228,15 +264,6 @@ namespace AngularSPAWebAPI
                 }
 
                 await next();
-            });
-
-            app.UseIdentityServer();
-
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
             });
 
             // Microsoft.AspNetCore.StaticFiles: API for starting the application from wwwroot.

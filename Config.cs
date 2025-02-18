@@ -1,66 +1,38 @@
-using IdentityServer4;
-using IdentityServer4.Models;
+using OpenIddict.Abstractions;
+using OpenIddict.Core;
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace AngularSPAWebAPI
+public static class OpenIddictConfig
 {
-    public class Config
+    public static async Task InitializeAsync(OpenIddictApplicationManager<OpenIddictApplicationDescriptor> applicationManager)
     {
-        // Identity resources (used by UserInfo endpoint).
-        public static IEnumerable<IdentityResource> GetIdentityResources()
+        if (await applicationManager.FindByClientIdAsync("AngularCBAS") is null)
         {
-            return new List<IdentityResource>
+            var descriptor = new OpenIddictApplicationDescriptor
             {
-                new IdentityResources.OpenId(),
-                new IdentityResources.Profile(),
-                new IdentityResource("roles", new List<string> { "role" })
-            };
-        }
-
-        // Api resources.
-        public static IEnumerable<ApiResource> GetApiResources()
-        {
-            return new List<ApiResource>
-            {
-                new ApiResource("WebAPI" ) {
-                    UserClaims = { "role" }
-                }
-            };
-        }
-
-        // Clients want to access resources.
-        public static IEnumerable<Client> GetClients()
-        {
-            // Clients credentials.
-            return new List<Client>
-            {
-                // http://docs.identityserver.io/en/release/reference/client.html.
-                new Client
+                ClientId = "AngularCBAS",
+                ConsentType = OpenIddictConstants.ConsentTypes.Implicit,
+                DisplayName = "Angular Client",
+                //Type = OpenIddictConstants.ClientTypes.Public,
+                PostLogoutRedirectUris = { new Uri("http://localhost:4200") },
+                RedirectUris = { new Uri("http://localhost:4200") },
+                Permissions =
                 {
-                    ClientId = "AngularCBAS",
-                    AllowedGrantTypes = GrantTypes.ResourceOwnerPassword, // Resource Owner Password Credential grant.
-                    AllowAccessTokensViaBrowser = true,
-                    RequireClientSecret = false, // This client does not need a secret to request tokens from the token endpoint.
-                    IdentityTokenLifetime = 3600, //Lifetime to identity token in seconds (defaults to 300 seconds / 5 minutes)
-                    AccessTokenLifetime = 7200, // Lifetime of access token in seconds.
-
-                    AllowedScopes = {
-                        IdentityServerConstants.StandardScopes.OpenId, // For UserInfo endpoint.
-                        IdentityServerConstants.StandardScopes.Profile,
-                        "roles",
-                        "WebAPI"
-                    },
-                    AllowOfflineAccess = true, // For refresh token.
-                    RefreshTokenUsage = TokenUsage.OneTimeOnly,
-                    AbsoluteRefreshTokenLifetime = 2592000,
-                    SlidingRefreshTokenLifetime = 1296000,
-                    RefreshTokenExpiration = TokenExpiration.Sliding,
-                    AllowedCorsOrigins = new List<string>
-                    {
-                        "http://localhost:4200"
-                    } // Only for development.
+                    OpenIddictConstants.Permissions.Endpoints.Authorization,
+                    OpenIddictConstants.Permissions.Endpoints.Token,
+                    OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode,
+                    OpenIddictConstants.Permissions.GrantTypes.RefreshToken,
+                    OpenIddictConstants.Permissions.ResponseTypes.Code,
+                    OpenIddictConstants.Permissions.Scopes.Email,
+                    OpenIddictConstants.Permissions.Scopes.Profile,
+                    OpenIddictConstants.Permissions.Scopes.Roles,
+                    //OpenIddictConstants.Permissions.Scopes.OfflineAccess
                 }
             };
+
+            await applicationManager.CreateAsync(descriptor);
         }
     }
 }
