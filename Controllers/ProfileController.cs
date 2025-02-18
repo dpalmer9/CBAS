@@ -1,6 +1,5 @@
 using AngularSPAWebAPI.Models;
 using AngularSPAWebAPI.Services;
-using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using AngularSPAWebAPI.Models.AccountViewModels;
+using OpenIddict.Validation.AspNetCore;
+using System.Linq;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace AngularSPAWebAPI.Controllers
 {
@@ -16,7 +19,7 @@ namespace AngularSPAWebAPI.Controllers
     /// </summary>
     [Route("api/[controller]")]
     // Authorization policy for this API.
-    [Authorize(AuthenticationSchemes = IdentityServerAuthenticationDefaults.AuthenticationScheme, Policy = "Access Resources")]
+    [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
     public class ProfileController : Controller
     {
         private readonly ProfileService _profileService;
@@ -33,7 +36,8 @@ namespace AngularSPAWebAPI.Controllers
         [HttpGet("GetUserInfo")]
         public async Task<IActionResult> GetUserInfo()
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userID = user.Id;
 
             return new JsonResult(_profileService.GetUserInfoByID(userID));
@@ -42,16 +46,17 @@ namespace AngularSPAWebAPI.Controllers
         [HttpPost("UpdateProfile")]
         public async Task<IActionResult> UpdateProfile ([FromBody]CreateViewModel UserModel)
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
-            var userID = user.Id;
-            _profileService.UpdateProfile(UserModel, userID);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
+            _profileService.UpdateProfile(UserModel, userId);
             return new JsonResult("Done!");
         }
 
         [HttpPost("ChangePassword")]
         public async Task<IActionResult> ChangePassword([FromBody]ChangePasswordModel model)
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userEmail = user.UserName;
 
             var appUser = await _manager.FindByNameAsync(userEmail);

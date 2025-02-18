@@ -1,11 +1,11 @@
 using AngularSPAWebAPI.Models;
 using AngularSPAWebAPI.Models.AccountViewModels;
 using AngularSPAWebAPI.Services;
-using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using OpenIddict.Validation.AspNetCore;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -17,8 +17,8 @@ namespace AngularSPAWebAPI.Controllers
     /// </summary>
     [Route("api/[controller]")]
     // Authorization policy for this API.
-    [Authorize(AuthenticationSchemes = IdentityServerAuthenticationDefaults.AuthenticationScheme, Policy = "Access Resources")]
-   // [AllowAnonymous]
+    [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+    // [AllowAnonymous]
     public class DataExtractionController : Controller
     {
         private readonly DataExtractionService _DataExtractionService;

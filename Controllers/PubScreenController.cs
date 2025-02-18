@@ -1,6 +1,5 @@
 using AngularSPAWebAPI.Models;
 using AngularSPAWebAPI.Services;
-using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +10,9 @@ using System.Threading.Tasks;
 using System.Linq;
 using Nest;
 using Microsoft.AspNetCore.Http;
+using OpenIddict.Validation.AspNetCore;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 
 
@@ -21,7 +23,7 @@ namespace AngularSPAWebAPI.Controllers
     /// </summary>
     [Route("api/[controller]")]
     // Authorization policy for this API.
-    [Authorize(AuthenticationSchemes = IdentityServerAuthenticationDefaults.AuthenticationScheme, Policy = "Access Resources")]
+    [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
     public class PubScreenController : Controller
     {
         private readonly PubScreenService _pubScreenService;
@@ -165,7 +167,8 @@ namespace AngularSPAWebAPI.Controllers
         [HttpPost("AddAuthor")]
         public async Task<IActionResult> AddAuthor([FromBody] PubScreenAuthor author)
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userEmail = user.UserName;
             var res = await _pubScreenService.AddAuthorsAsync(author, userEmail);
             return new JsonResult(res);
@@ -186,7 +189,8 @@ namespace AngularSPAWebAPI.Controllers
         //[AllowAnonymous]
         public async Task<IActionResult> AddPublication([FromBody] PubScreen publication)
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userEmail = user.UserName;
             return new JsonResult(_pubScreenService.AddPublications(publication, userEmail));
         }
@@ -195,7 +199,8 @@ namespace AngularSPAWebAPI.Controllers
         [HttpPost("EditPublication")]
         public async Task<IActionResult> EditPublication(int publicationId, [FromBody] PubScreen publication)
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userEmail = user.UserName;
             return new JsonResult(_pubScreenService.EditPublication(publicationId, publication, userEmail));
         }
@@ -287,7 +292,8 @@ namespace AngularSPAWebAPI.Controllers
         [HttpGet("AddQueuePaper")] //HttpPost results in failed authentication
         public async Task<IActionResult> AddQueuePaper(int pubmedID, string doi)
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userEmail = user.UserName;
             var result = await _pubScreenService.AddQueuePaper(pubmedID, doi, userEmail);
             return new JsonResult(result);
@@ -318,7 +324,8 @@ namespace AngularSPAWebAPI.Controllers
         [HttpGet("AddCSVPapers")]
         public async Task<IActionResult> AddCSVPapers()
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userEmail = user.UserName;
             return new JsonResult(_pubScreenService.AddCSVPapers(userEmail));
         }

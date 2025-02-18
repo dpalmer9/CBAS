@@ -1,12 +1,12 @@
 using AngularSPAWebAPI.Models;
 using AngularSPAWebAPI.Services;
-using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using OpenIddict.Validation.AspNetCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,6 +15,7 @@ using System.Net;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace AngularSPAWebAPI.Controllers
 {
@@ -23,7 +24,7 @@ namespace AngularSPAWebAPI.Controllers
     /// </summary>
     [Route("api/[controller]")]
     // Authorization policy for this API.
-    [Authorize(AuthenticationSchemes = IdentityServerAuthenticationDefaults.AuthenticationScheme, Policy = "Access Resources")]
+    [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
     public class UploadController : Controller
     {
         private readonly UploadService _uploadService;
@@ -48,15 +49,15 @@ namespace AngularSPAWebAPI.Controllers
             string SessionName = HttpContext.Request.Form["sessionName"][0];
             int sessionID = Int16.Parse(HttpContext.Request.Form["sessionID"][0]);
 
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userEmail = user.UserName;
-            var userID = user.Id;
 
             string TaskName = await _uploadService.GetTaskNameAsync(expID);
             int TaskID = await _uploadService.GetTaskIDAsync(expID);
             string ExpName = await _uploadService.GetExpNameAsync(expID);
 
-            List<FileUploadResult> result = await _uploadService.UploadFiles(files, TaskName, expID, subExpId, ExpName, userEmail, userID, SessionName, TaskID, sessionID);
+            List<FileUploadResult> result = await _uploadService.UploadFiles(files, TaskName, expID, subExpId, ExpName, userEmail, userId, SessionName, TaskID, sessionID);
 
             // add a function to send an email to inform admin that new data added to the server
 
@@ -80,10 +81,10 @@ namespace AngularSPAWebAPI.Controllers
         [HttpGet("SetUploadAsResolved")]
         public async Task<IActionResult> SetUploadAsResolved(int uploadId)
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userEmail = user.UserName;
-            var userID = user.Id;
-            var res = await _uploadService.SetUploadAsResolvedAsync(uploadId, userID);
+            var res = await _uploadService.SetUploadAsResolvedAsync(uploadId, userId);
 
             return new JsonResult(res);
         }

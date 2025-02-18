@@ -1,6 +1,5 @@
 using AngularSPAWebAPI.Models;
 using AngularSPAWebAPI.Services;
-using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +8,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Cors;
+using OpenIddict.Validation.AspNetCore;
+using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace AngularSPAWebAPI.Controllers
 {
@@ -17,7 +19,7 @@ namespace AngularSPAWebAPI.Controllers
     /// </summary>
     [Route("api/[controller]")]
     // Authorization policy for this API.
-    [Authorize(AuthenticationSchemes = IdentityServerAuthenticationDefaults.AuthenticationScheme, Policy = "Access Resources")]
+    [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
     public class CogbytesController : Controller
     {
         private readonly CogbytesService _cogbytesService;
@@ -89,7 +91,8 @@ namespace AngularSPAWebAPI.Controllers
         [HttpPost("AddAuthor")]
         public async Task<IActionResult> AddAuthor([FromBody] PubScreenAuthor author)
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userEmail = user.UserName;
             return new JsonResult(_cogbytesService.AddAuthors(author, userEmail));
         }
@@ -104,7 +107,8 @@ namespace AngularSPAWebAPI.Controllers
         [HttpPost("AddPI")]
         public async Task<IActionResult> AddPI([FromBody] Request request)
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userEmail = user.UserName;
             return new JsonResult(_cogbytesService.AddNewPI(request, userEmail));
         }
@@ -119,7 +123,8 @@ namespace AngularSPAWebAPI.Controllers
         [HttpPost("AddRepository")]
         public async Task<IActionResult> AddRepository([FromBody] Cogbytes repository)
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userEmail = user.UserName;
             return new JsonResult(_cogbytesService.AddRepository(repository, userEmail));
         }
@@ -127,7 +132,8 @@ namespace AngularSPAWebAPI.Controllers
         [HttpGet("GetRepositories")]
         public async Task<IActionResult> GetRepositories()
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userEmail = user.UserName;
             return new JsonResult(_cogbytesService.GetRepositories(userEmail));
         }
@@ -135,7 +141,8 @@ namespace AngularSPAWebAPI.Controllers
         [HttpPost("EditRepository")]
         public async Task<IActionResult> EditRepository(int repositoryID, [FromBody] Cogbytes repository)
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
             var userEmail = user.UserName;
             return new JsonResult(_cogbytesService.EditRepository(repositoryID, repository, userEmail));
         }

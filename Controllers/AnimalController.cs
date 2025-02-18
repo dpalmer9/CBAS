@@ -1,12 +1,14 @@
 using AngularSPAWebAPI.Models;
 using AngularSPAWebAPI.Services;
-using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using OpenIddict.Validation.AspNetCore;
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace AngularSPAWebAPI.Controllers
 {
@@ -15,7 +17,7 @@ namespace AngularSPAWebAPI.Controllers
     /// </summary>
     [Route("api/[controller]")]
     // Authorization policy for this API.
-    [Authorize(AuthenticationSchemes = IdentityServerAuthenticationDefaults.AuthenticationScheme, Policy = "Access Resources")]
+    [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
     public class AnimalController : Controller
     {
         private readonly AnimalService _animalService;
@@ -114,10 +116,10 @@ namespace AngularSPAWebAPI.Controllers
             bool updated = await _animalService.ReplaceAnimalIdAsync(OldAnimalId, ExistingAnimalIdToUse);
             if (isAnimalInfocompleted)
             {
-                var user = await _manager.GetUserAsync(HttpContext.User);
-                var userID = user.Id;
+                var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                var user = await _manager.FindByIdAsync(userId);
                 UploadService uploadService = new UploadService();
-                await uploadService.SetAsResolvedForEditedAnimalIdAsync(ExistingAnimalIdToUse, userID);
+                await uploadService.SetAsResolvedForEditedAnimalIdAsync(ExistingAnimalIdToUse, userId);
             }
             if (updated == true)
             {

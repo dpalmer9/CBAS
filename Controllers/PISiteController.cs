@@ -1,12 +1,14 @@
 using AngularSPAWebAPI.Models;
 using AngularSPAWebAPI.Services;
-using IdentityServer4.AccessTokenValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using OpenIddict.Validation.AspNetCore;
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace AngularSPAWebAPI.Controllers
 {
@@ -15,7 +17,7 @@ namespace AngularSPAWebAPI.Controllers
     /// </summary>
     [Route("api/[controller]")]
     // Authorization policy for this API.
-    [Authorize(AuthenticationSchemes = IdentityServerAuthenticationDefaults.AuthenticationScheme, Policy = "Access Resources")]
+    [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
     public class PISiteController : Controller
     {
         private readonly PISiteService _piSiteService;
@@ -38,9 +40,9 @@ namespace AngularSPAWebAPI.Controllers
         [HttpGet("GetPISitebyUserID")]
         public async Task<IActionResult> GetPISitebyUserID()
         {
-            var user = await _manager.GetUserAsync(HttpContext.User);
-            var userID = user.Id;
-            var res = await _piSiteService.GetPISitebyUserIDAsync(userID);
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            var user = await _manager.FindByIdAsync(userId);
+            var res = await _piSiteService.GetPISitebyUserIDAsync(userId);
             return new JsonResult(res);
         }
 
