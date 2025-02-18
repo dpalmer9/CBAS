@@ -138,10 +138,11 @@ namespace AngularSPAWebAPI
                    .RequireProofKeyForCodeExchange();
         options.AcceptAnonymousClients();
 
+        options.AllowRefreshTokenFlow();
 
         options.DisableAccessTokenEncryption();
 
-        options.RegisterScopes("openid", "profile", "email", "roles", "api");
+        options.RegisterScopes("openid", "profile", "email", "roles", "api", "offline_access");
 
         options.AddDevelopmentEncryptionCertificate()
                .AddDevelopmentSigningCertificate();

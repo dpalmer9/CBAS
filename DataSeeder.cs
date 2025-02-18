@@ -21,6 +21,30 @@ public static class SeedData
 
         var existingClient = await applicationManager.FindByClientIdAsync("AngularCBAS");
 
+        // Similarly, you can seed scopes if needed.
+        // Example:
+        var scopeManager = scope.ServiceProvider.GetRequiredService<IOpenIddictScopeManager>();
+        if (await scopeManager.FindByNameAsync("api") == null)
+        {
+            var scopeDescriptor = new OpenIddictScopeDescriptor
+            {
+                Name = "api",
+                DisplayName = "API Access"
+            };
+
+            await scopeManager.CreateAsync(scopeDescriptor);
+        }
+        if (await scopeManager.FindByNameAsync("offline_access") == null)
+        {
+            var scopeDescriptor = new OpenIddictScopeDescriptor
+            {
+                Name = "offline_access",
+                DisplayName = "Offline Access"
+            };
+
+            await scopeManager.CreateAsync(scopeDescriptor);
+        }
+
         if (existingClient != null)
         {
             // ✅ Update the existing client
@@ -48,7 +72,8 @@ public static class SeedData
                 OpenIddictConstants.Permissions.Prefixes.Scope + "roles",
 
                 // ✅ Allow custom API scope
-                OpenIddictConstants.Permissions.Prefixes.Scope + "api"
+                OpenIddictConstants.Permissions.Prefixes.Scope + "api",
+                OpenIddictConstants.Permissions.Prefixes.Scope + "offline_access"
             },
 
                 Requirements =
@@ -59,50 +84,6 @@ public static class SeedData
 
             // ✅ Apply the updates
             await applicationManager.UpdateAsync(existingClient, descriptor);
-
-            //// Seed a client application if it doesn't exist.
-            //if (await applicationManager.FindByClientIdAsync("AngularCBAS") == null)
-            //{
-            //    var descriptor = new OpenIddictApplicationDescriptor
-            //    {
-            //        ClientId = "AngularCBAS",
-            //        DisplayName = "MouseBytes",
-            //        RedirectUris = { new Uri("http://localhost:4200/index.html") },
-            //        PostLogoutRedirectUris = { new Uri("http://localhost:4200/") },
-            //        Permissions =
-            //        {
-            //            Permissions.Endpoints.Authorization,
-            //            Permissions.Endpoints.Token,
-            //            Permissions.GrantTypes.AuthorizationCode,
-            //            Permissions.ResponseTypes.Code,
-            //            Permissions.Scopes.Email,
-            //            Permissions.Scopes.Profile,
-            //            Permissions.Scopes.Roles,
-            //            // If using refresh tokens
-            //            Permissions.GrantTypes.RefreshToken,
-            //        },
-            //        Requirements =
-            //        {
-            //            // Enforce Proof Key for Code Exchange (PKCE) for public clients.
-            //            Requirements.Features.ProofKeyForCodeExchange
-            //        }
-            //    };
-
-            //    await applicationManager.CreateAsync(descriptor);
-        }
-
-        // Similarly, you can seed scopes if needed.
-        // Example:
-        var scopeManager = scope.ServiceProvider.GetRequiredService<IOpenIddictScopeManager>();
-        if (await scopeManager.FindByNameAsync("api") == null)
-        {
-            var scopeDescriptor = new OpenIddictScopeDescriptor
-            {
-                Name = "api",
-                DisplayName = "API Access"
-            };
-
-            await scopeManager.CreateAsync(scopeDescriptor);
         }
     }
 }
