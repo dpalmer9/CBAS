@@ -15,6 +15,7 @@ import { AppComponent } from './app.component';
 import { HomeComponent } from './home/home.component';
 
 import { OAuthModule } from 'angular-oauth2-oidc';
+import { OAuthConfig } from './oauth.config';
 import { ExpDialogeComponent } from './expDialoge/expDialoge.component';
 import { PubscreenDialogeComponent } from './pubscreenDialoge/pubscreenDialoge.component';
 import { AnimalDialogComponent } from './animal-dialog/animal-dialog.component';
@@ -41,8 +42,6 @@ import { GenericDialogComponent } from './generic-dialog/generic-dialog.componen
 
 import { SubExpDialogeComponent } from './sub-exp-dialoge/sub-exp-dialoge.component';
 
-import { CallbackComponent } from './callback/callback.component';
-
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 
 import { ScrollService } from './shared/scroll.service';
@@ -59,6 +58,9 @@ import { RouterModule, Routes } from '@angular/router';
 // import { GenomicsComponent } from './genomics/genomics.component';
 // import { DownloadDsComponent } from './download-ds/download-ds.component';
 
+export function initOAuth(oAuthConfig: OAuthConfig): Function {
+  return () => oAuthConfig.load();
+}
 
 // declare global {
 //  interface Navigator {
@@ -119,8 +121,6 @@ import { RouterModule, Routes } from '@angular/router';
   CogbytesDialogueComponent,
   CogbytesAuthorDialogueComponent,
   CogbytesPIDialogeComponent,
-  CallbackComponent,
-
 
   ],
   exports: [
@@ -128,8 +128,15 @@ import { RouterModule, Routes } from '@angular/router';
   ],
   providers: [
   Title,
+  OAuthConfig,
+  {
+  provide: APP_INITIALIZER,
+  useFactory: initOAuth,
+  deps: [OAuthConfig],
+  multi: true
+  },
   AuthGuard,
-  // AuthenticationService,
+  AuthenticationService,
   IdentityService,
   PISiteService,
   ManageUserService,

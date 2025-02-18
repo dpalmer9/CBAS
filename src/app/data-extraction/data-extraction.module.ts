@@ -31,7 +31,7 @@ import { ExpDialogeService } from '../services/expdialoge.service';
 
   ],
   providers: [
-  // AuthenticationService,
+  AuthenticationService,
   TaskAnalysisService,
   DataExtractionService,
   PagerService,
@@ -41,7 +41,7 @@ import { ExpDialogeService } from '../services/expdialoge.service';
   ],
   bootstrap: [DataExtractionComponent],
 
-
+  exports: [DataExtractionComponent]
   })
 export class DataExtractionModule { }
 

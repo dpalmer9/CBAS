@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { OAuthService } from 'angular-oauth2-oidc';
@@ -19,15 +19,8 @@ export class SigninComponent extends Signin {
     protected router: Router,
     protected oAuthService: OAuthService,
     protected authenticationService: AuthenticationService,
-      protected manageuserService: ManageUserService,
-      private cdr: ChangeDetectorRef) {
+    protected manageuserService: ManageUserService) {
     super(router, oAuthService, authenticationService, manageuserService);
   }
-
-    signin(): void {
-        // Initiate the Authorization Code Flow with PKCE.
-        this.authenticationService.signin(this.model.username, this.model.password);
-        this.cdr.detectChanges();
-    }
 
 }

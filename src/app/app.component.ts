@@ -4,7 +4,6 @@ import { Router, NavigationEnd } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { Observable, of } from 'rxjs';
 import { OAuthService } from 'angular-oauth2-oidc';
-import { oAuthDevelopmentConfig } from './oauth.config'
 import { AuthenticationService } from './services/authentication.service';
 import { User } from './models/user';
 
@@ -23,22 +22,14 @@ export class AppComponent implements OnInit {
     isMobile = false;
     isTablet = false;
     isDesktop = false;
-  navItemsAll: any[] = [
+  navItems: any[] = [
+    // { name: 'Home', route: 'home' },
+    // { name: 'Resources', route: 'resources' },
     { name: 'Data Lab', route: 'data-extraction' },
     { name: 'Data Visualization', route: 'data-visualization' },
+    // { name: 'MouseBytes Dashborad', route: 'mb-dashboard' },
     { name: 'Search', route: 'search-experiment' },
-    ];
-
-    navItemsUser: any[] = [
-        { name: 'Experiment', route: 'experiment' },
-        { name: 'Upload', route: 'upload' },
-        { name: 'Animal', route: 'animal-info' },
-        { name: 'Upload Log', route: 'dashboard'},
-    ];
-
-    navItemsAdmin: any[] = [
-        { name: 'User Management', route: 'manage-user' },
-    ];
+  ];
 
   navItemsTutorials: any[] = [
 
@@ -86,6 +77,19 @@ export class AppComponent implements OnInit {
     this.isFullDataAccess = false;
     this.showFooter = false;
 
+    if (this.oAuthService.hasValidAccessToken()) {
+      this.authenticationService.init();
+
+      // Strategy for refresh token through a scheduler.
+      this.authenticationService.startupTokenRefresh();
+    }
+
+    // this.router.events.subscribe((event) => {
+    //  if (event instanceof NavigationEnd) {
+    //    gtag('config', 'G-D1Q51EVX8L', { 'page_path': event.urlAfterRedirects });
+    //  }
+    // });
+
   }
 
     ngOnInit() {
@@ -107,15 +111,7 @@ export class AppComponent implements OnInit {
             this.isMobile = false;
             this.isTablet = false;
         });
-        this.title.setTitle('MouseBytes');
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('code') || urlParams.has('error')) {
-            //this.authenticationService.processLoginCallback();
-
-            // Optionally, clear the URL parameters to clean up the browser's address bar.
-            // For example, you can navigate to the home route.
-            //this.router.navigate(['/home']);
-        }
+    this.title.setTitle('MouseBytes');
 
     this.signedIn = this.authenticationService.isSignedIn();
 
@@ -125,10 +121,10 @@ export class AppComponent implements OnInit {
         this.isAdmin = this.authenticationService.isInRole('administrator');
         this.isUser = this.authenticationService.isInRole('user');
         this.isFullDataAccess = this.authenticationService.isInRole('fulldataaccess');
-          });
+      });
 
 
-    }
+  }
 
   mouseEnter(div: string) {
     if (div === 'homelink') {
@@ -148,12 +144,7 @@ export class AppComponent implements OnInit {
     } else if (div === 'aboutus') {
       $('#aboutImage').css('visibility', 'hidden');
     }
-    }
-
-    public signin(): void {
-        // Initiate the Authorization Code Flow with PKCE.
-        this.oAuthService.initLoginFlow();
-    }
+  }
 
   signout(): void {
     this.authenticationService.signout();
@@ -218,16 +209,20 @@ export class AppComponent implements OnInit {
   onActivate(event: any) {
 
     this.showHideFooter(this.router.url);
-    }
-
-    @HostListener('window:beforeunload', ['$event'])
-    appUnload(): void {
-        localStorage.setItem('autoLoginAttempted', 'false')
-        console.log('Flag Switched')
-    }
-
-    private isOnSignInPage(): boolean {
-        return window.location.pathname.toLowerCase().includes('signin');
-    }
+    // console.log(this.router.url);
+    // console.log(event.constructor.name);
+    // this.scrollTo("about");
+    // if (e.constructor.name)==="login"{ // for example
+    //    window.scroll(0, 0);
+    // }
+    // let scrollToTop = window.setInterval(() => {
+    //    let pos = window.pageYOffset;
+    //    if (pos > 0) {
+    //        window.scrollTo(0, pos - 20); // how far to scroll on each step
+    //    } else {
+    //        window.clearInterval(scrollToTop);
+    //    }
+    // }, 16);
+  }
 
 }

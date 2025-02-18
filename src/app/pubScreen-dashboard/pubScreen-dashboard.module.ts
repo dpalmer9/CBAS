@@ -20,7 +20,7 @@ import { DataExtractionService } from '../services/dataextraction.service';
   DataExtractionService,
 
   ],
-  bootstrap: [PSDashboardComponent]
+  bootstrap: [PSDashboardComponent],
 
 
   })

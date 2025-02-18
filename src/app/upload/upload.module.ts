@@ -32,13 +32,13 @@ import { AuthenticationService } from '../services/authentication.service';
 
   ],
   providers: [
-  // AuthenticationService,
+  AuthenticationService,
   UploadService,
   {
   provide: DROPZONE_CONFIG,
   useValue: {
 // Change this to your upload POST address:
-  url: 'https://localhost:5000/api/upload/UploadFiles',
+  url: 'http://localhost:5000/api/upload/UploadFiles',
 // maxFilesize: 50,
   acceptedFiles: '.xml',
 // headers: { 'Authorization': this.authenticationService.getAuthorizationHeader() },

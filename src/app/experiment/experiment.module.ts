@@ -29,7 +29,7 @@ import { NgxDatatableModule } from '@swimlane/ngx-datatable';
 
   ],
   providers: [
-  // AuthenticationService,
+  AuthenticationService,
   ExperimentService,
   UploadService,
 // PostProcessingQcService,

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System;
 using Nest;
+using IdentityServer4.Models;
 using System.Linq;
 
 namespace CBAS.Services

@@ -10,8 +10,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
 
 namespace AngularSPAWebAPI
 {
@@ -19,13 +17,7 @@ namespace AngularSPAWebAPI
     {
         public static void Main(string[] args)
         {
-
             var host = BuildWebHost(args);
-
-            using (var scope = host.Services.CreateScope())
-            {
-                SeedData.InitializeAsync(scope.ServiceProvider);
-            }
 
             host.Run();
         }
@@ -39,7 +31,7 @@ namespace AngularSPAWebAPI
                         .UseKestrel(o => { o.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(10); o.Limits.MaxRequestBodySize = null; })
                         .UseIIS()
                         //.UseHttpSys(options => { options.MaxRequestBodySize = 100_000_000;})
-                        //.UseUrls("https://localhost:5000")
+                        //.UseUrls("http://localhost:5000")
                         .Build();
     }
 }

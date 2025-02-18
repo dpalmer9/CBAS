@@ -22,7 +22,7 @@ import { PagerService } from '../services/pager.service';
 
   ],
   providers: [
-  // AuthenticationService,
+  AuthenticationService,
   PagerService,
   SearchExperimentService,
 
