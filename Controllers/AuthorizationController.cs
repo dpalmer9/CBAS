@@ -127,6 +127,15 @@ public class AuthorizationController : Controller
 
             return SignIn(result.Principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
+        else if (request.IsRefreshTokenGrantType())
+        {
+            var result = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            if(!result.Succeeded)
+            {
+                return BadRequest(new { error = "Invalid Refresh Token" });
+            }
+            return SignIn(result.Principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        }
 
         return BadRequest(new { error = "Unsupported grant type" });
     }
