@@ -1,5 +1,5 @@
-using IdentityServer4;
-using IdentityServer4.Models;
+using IdentityServer8;
+using IdentityServer8.Models;
 using System.Collections.Generic;
 
 namespace AngularSPAWebAPI

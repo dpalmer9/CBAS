@@ -4,7 +4,7 @@ using AngularSPAWebAPI.Data;
 using AngularSPAWebAPI.Models;
 using AngularSPAWebAPI.Services;
 using CBAS.Extensions;
-using IdentityServer4.AccessTokenValidation;
+using HigginsSoft.IdentityServer8.AccessTokenValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -93,9 +93,6 @@ namespace AngularSPAWebAPI
             //services.AddIdentityServer(options =>
             //         options.PublicOrigin = "https://mousebytes.ca")
             services.AddIdentityServer()
-                // The AddDeveloperSigningCredential extension creates temporary key material for signing tokens.
-                // This might be useful to get started, but needs to be replaced by some persistent key material for production scenarios.
-                // See http://docs.identityserver.io/en/release/topics/crypto.html#refcrypto for more information.
                 .AddDeveloperSigningCredential()
                 .AddInMemoryPersistedGrants()
                 // To configure IdentityServer to use EntityFramework (EF) as the storage mechanism for configuration data (rather than using the in-memory implementations),
@@ -107,8 +104,8 @@ namespace AngularSPAWebAPI
 
             if (currentEnvironment.IsProduction())
             {
-                services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
-                    .AddIdentityServerAuthentication(options =>
+                services.AddAuthentication("Bearer")
+                    .AddIdentityServerJwt(options =>
                     {
                         options.Authority = "http://localhost:5000/";
                         options.RequireHttpsMetadata = false;
@@ -118,8 +115,8 @@ namespace AngularSPAWebAPI
             }
             else
             {
-                services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
-                .AddIdentityServerAuthentication(options =>
+                services.AddAuthentication("Bearer")
+                .AddIdentityServerJwt(options =>
                 {
                     options.Authority = "http://localhost:5000/";
                     options.RequireHttpsMetadata = false;
