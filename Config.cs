@@ -6,7 +6,7 @@ namespace AngularSPAWebAPI
 {
     public class Config
     {
-        // Identity resources (used by UserInfo endpoint).
+        // Identity resources (used sby UserInfo endpoint).
         public static IEnumerable<IdentityResource> GetIdentityResources()
         {
             return new List<IdentityResource>

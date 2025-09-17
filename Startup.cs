@@ -4,7 +4,6 @@ using AngularSPAWebAPI.Data;
 using AngularSPAWebAPI.Models;
 using AngularSPAWebAPI.Services;
 using CBAS.Extensions;
-using HigginsSoft.IdentityServer8.AccessTokenValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -17,6 +16,7 @@ using Microsoft.Extensions.Options;
 using Nest;
 using Serilog;
 using Serilog.Exceptions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace AngularSPAWebAPI
 {
@@ -105,24 +105,22 @@ namespace AngularSPAWebAPI
             if (currentEnvironment.IsProduction())
             {
                 services.AddAuthentication("Bearer")
-                    .AddIdentityServerJwt(options =>
+                    .AddJwtBearer(options =>
                     {
                         options.Authority = "http://localhost:5000/";
                         options.RequireHttpsMetadata = false;
-
-                        options.ApiName = "WebAPI";
+                        options.Audience = "WebAPI";
                     });
             }
             else
             {
                 services.AddAuthentication("Bearer")
-                .AddIdentityServerJwt(options =>
-                {
-                    options.Authority = "http://localhost:5000/";
-                    options.RequireHttpsMetadata = false;
-
-                    options.ApiName = "WebAPI";
-                });
+                    .AddJwtBearer(options =>
+                    {
+                        options.Authority = "http://localhost:5000/";
+                        options.RequireHttpsMetadata = false;
+                        options.Audience = "WebAPI";
+                    });
             }
 
 
